@@ -1,7 +1,7 @@
 """
 Database initialization script.
 Creates all required tables if they don't exist.
-Supports MySQL and MariaDB (set DB_DRIVER=mysql or DB_DRIVER=mariadb in .env).
+Works with both MySQL and MariaDB (uses mysql-connector-python).
 """
 from db import get_script_connection
 from config import Config

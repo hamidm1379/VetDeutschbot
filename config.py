@@ -20,7 +20,7 @@ class Config:
     DB_USER = os.getenv('DB_USER', 'root')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_NAME = os.getenv('DB_NAME', 'telegram_bot')
-    # DB_DRIVER: 'mysql' or 'mariadb'
+    # DB_DRIVER: kept for .env compatibility; both use mysql-connector-python (works with MySQL and MariaDB)
     DB_DRIVER = os.getenv('DB_DRIVER', 'mysql').lower().strip()
     
     # Admin

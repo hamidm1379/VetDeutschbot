@@ -1,17 +1,10 @@
 """
 Migration script to add name and mobile columns to users table.
-Supports MySQL and MariaDB (set DB_DRIVER=mysql or DB_DRIVER=mariadb in .env).
+Works with both MySQL and MariaDB (uses mysql-connector-python).
 """
 from db import get_script_connection
 from config import Config
 import sys
-
-
-def _placeholder_query(query):
-    """Use ? for MariaDB, %s for MySQL."""
-    if Config.DB_DRIVER == 'mariadb':
-        return query.replace('%s', '?')
-    return query
 
 
 def column_exists(cursor, table_name, column_name):
@@ -23,10 +16,7 @@ def column_exists(cursor, table_name, column_name):
         AND TABLE_NAME = %s
         AND COLUMN_NAME = %s
     """
-    cursor.execute(
-        _placeholder_query(query),
-        (Config.DB_NAME, table_name, column_name),
-    )
+    cursor.execute(query, (Config.DB_NAME, table_name, column_name))
     result = cursor.fetchone()
     return result[0] > 0 if result else False
 
