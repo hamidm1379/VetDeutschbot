@@ -37,6 +37,33 @@ class Database:
         except mysql.connector.Error as e:
             print(f"Error creating connection pool: {e}")
             raise
+        self._ensure_users_table()
+
+    def _ensure_users_table(self):
+        """Create users table if it does not exist (so bot works without running init_database.py)."""
+        create_sql = """
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            telegram_id BIGINT UNIQUE NOT NULL,
+            name VARCHAR(255) DEFAULT NULL,
+            mobile VARCHAR(20) DEFAULT NULL,
+            language VARCHAR(10) DEFAULT NULL,
+            current_step INT DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            account_expires_at DATETIME DEFAULT NULL,
+            INDEX idx_telegram_id (telegram_id),
+            INDEX idx_current_step (current_step)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(create_sql)
+                finally:
+                    cursor.close()
+        except mysql.connector.Error as e:
+            print(f"Warning: could not ensure users table: {e}")
 
     @contextmanager
     def get_connection(self):
