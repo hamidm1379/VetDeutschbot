@@ -1,8 +1,8 @@
 """
 Migration script to add sections and lessons tables.
-This script creates the necessary tables for the sections/lessons feature.
+Supports MySQL and MariaDB (set DB_DRIVER=mysql or DB_DRIVER=mariadb in .env).
 """
-import mysql.connector
+from db import get_script_connection
 from config import Config
 import sys
 
@@ -10,13 +10,7 @@ import sys
 def run_migration():
     """Run migration to add sections and lessons tables."""
     try:
-        # Connect to MySQL server
-        connection = mysql.connector.connect(
-            host=Config.DB_HOST,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD,
-            database=Config.DB_NAME
-        )
+        connection, DBError = get_script_connection()
         cursor = connection.cursor()
         
         print(f"[OK] Connected to database: {Config.DB_NAME}")
@@ -55,8 +49,7 @@ def run_migration():
                     # Print first few words of statement for debugging
                     first_words = ' '.join(statement.split()[:4])
                     print(f"  [{i}] [OK] Executed: {first_words}...")
-                except mysql.connector.Error as e:
-                    # Ignore "table already exists" errors
+                except DBError as e:
                     if "already exists" not in str(e).lower():
                         print(f"  [WARNING] [{i}]: {e}")
                     else:
@@ -101,10 +94,10 @@ def run_migration():
         print("\n[SUCCESS] Migration complete!")
         return True
         
-    except mysql.connector.Error as e:
+    except Exception as e:
         print(f"\n[ERROR] Database error: {e}")
         print("\nPlease check:")
-        print("  1. MySQL server is running")
+        print("  1. MySQL/MariaDB server is running")
         print("  2. Database credentials in .env are correct")
         print("  3. Database exists and user has privileges")
         return False
@@ -129,6 +122,7 @@ if __name__ == '__main__':
     print(f"Database: {Config.DB_NAME}")
     print(f"Host: {Config.DB_HOST}")
     print(f"User: {Config.DB_USER}")
+    print(f"Driver: {Config.DB_DRIVER}")
     print()
     
     success = run_migration()

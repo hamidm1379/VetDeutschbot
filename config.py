@@ -15,11 +15,13 @@ class Config:
     # Telegram Bot
     BOT_TOKEN = os.getenv('BOT_TOKEN')
     
-    # Database
+    # Database (supports MySQL and MariaDB)
     DB_HOST = os.getenv('DB_HOST', 'localhost')
     DB_USER = os.getenv('DB_USER', 'root')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_NAME = os.getenv('DB_NAME', 'telegram_bot')
+    # DB_DRIVER: 'mysql' or 'mariadb'
+    DB_DRIVER = os.getenv('DB_DRIVER', 'mysql').lower().strip()
     
     # Admin
     ADMIN_IDS = os.getenv('ADMIN_IDS', '1393899188,8504577397')
