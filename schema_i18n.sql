@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     language VARCHAR(10) DEFAULT NULL COMMENT 'Language code (e.g., fa, de, en)',
     current_step INT DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    account_expires_at DATETIME DEFAULT NULL COMMENT 'Subscription/account expiration',
     INDEX idx_telegram_id (telegram_id),
     INDEX idx_current_step (current_step)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
