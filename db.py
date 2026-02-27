@@ -37,33 +37,77 @@ class Database:
         except mysql.connector.Error as e:
             print(f"Error creating connection pool: {e}")
             raise
-        self._ensure_users_table()
+        self._ensure_tables()
 
-    def _ensure_users_table(self):
-        """Create users table if it does not exist (so bot works without running init_database.py)."""
-        create_sql = """
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            telegram_id BIGINT UNIQUE NOT NULL,
-            name VARCHAR(255) DEFAULT NULL,
-            mobile VARCHAR(20) DEFAULT NULL,
-            language VARCHAR(10) DEFAULT NULL,
-            current_step INT DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            account_expires_at DATETIME DEFAULT NULL,
-            INDEX idx_telegram_id (telegram_id),
-            INDEX idx_current_step (current_step)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        """
+    def _ensure_tables(self):
+        """Create all required tables if they do not exist (so bot works without running init_database.py)."""
+        tables_sql = [
+            """CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                telegram_id BIGINT UNIQUE NOT NULL,
+                name VARCHAR(255) DEFAULT NULL,
+                mobile VARCHAR(20) DEFAULT NULL,
+                language VARCHAR(10) DEFAULT NULL,
+                current_step INT DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                account_expires_at DATETIME DEFAULT NULL,
+                INDEX idx_telegram_id (telegram_id),
+                INDEX idx_current_step (current_step)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            """CREATE TABLE IF NOT EXISTS steps (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title_json JSON NOT NULL,
+                description_json JSON DEFAULT NULL,
+                file_id VARCHAR(255) DEFAULT NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_is_active (is_active)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            """CREATE TABLE IF NOT EXISTS exams (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                step_id INT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_step_exam (step_id),
+                INDEX idx_step_id (step_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            """CREATE TABLE IF NOT EXISTS questions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                exam_id INT NOT NULL,
+                question_json JSON NOT NULL,
+                options_json TEXT NOT NULL,
+                correct_option INT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+                INDEX idx_exam_id (exam_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            """CREATE TABLE IF NOT EXISTS user_exam_results (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                step_id INT NOT NULL,
+                score DECIMAL(5,2) NOT NULL,
+                passed BOOLEAN NOT NULL DEFAULT FALSE,
+                completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (step_id) REFERENCES steps(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_user_step_result (user_id, step_id),
+                INDEX idx_user_id (user_id),
+                INDEX idx_step_id (step_id),
+                INDEX idx_passed (passed)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        ]
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 try:
-                    cursor.execute(create_sql)
+                    for sql in tables_sql:
+                        cursor.execute(sql)
                 finally:
                     cursor.close()
         except mysql.connector.Error as e:
-            print(f"Warning: could not ensure users table: {e}")
+            print(f"Warning: could not ensure tables: {e}")
 
     @contextmanager
     def get_connection(self):
